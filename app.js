@@ -4,9 +4,11 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const authRoutes = require('./routes/authRoutes');
 const taskRoutes = require('./routes/taskRoutes');
+require('dotenv').config();
 
 const app = express();
-const DB = `mongodb+srv://fijula:fijula@cluster0.ef718jf.mongodb.net/?retryWrites=true&w=majority`
+const DB = process.env.MONGO_URL;
+
 // Connect to database
 mongoose.connect(DB, {
   useNewUrlParser: true,
@@ -29,14 +31,13 @@ app.use(session({
     ttl: 24 * 60 * 60 // session TTL (1 day)
   })
 }));
-// mongodb+srv://fijula:<password>@cluster0.ef718jf.mongodb.net/?retryWrites=true&w=majority'
 
 // Routes
 app.use('/auth', authRoutes);
 app.use('/api', taskRoutes);
 
 // Start server
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server listening on port ${PORT}`);
+  console.log(`Server listening at port ${PORT}`);
 });
