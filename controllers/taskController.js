@@ -115,6 +115,12 @@ taskController.delete = async (req, res) => {
 
 taskController.getAll = async (req, res, next) => {
   const { page = 1, limit = 10 } = req.query;
+  if (!req.session || !req.session.userId) {
+    return res.status(401).json({
+      success: false,
+      message: "Unauthorized",
+    });
+  }
 
   try {
     const tasks = await Task.find({ user: req.session.userId })
