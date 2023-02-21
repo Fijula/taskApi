@@ -21,7 +21,7 @@ taskController.create = async (req, res, next) => {
         message: "Unauthorized",
       });
     }
-
+    session.checkSession (req, res, async() => {
     const newTask = await Task.create({
       date,
       task,
@@ -34,7 +34,7 @@ taskController.create = async (req, res, next) => {
       message: "Task created",
       task: newTask,
     });
-  } catch (err) {
+  })} catch (err) {
     next(err);
   }
 };
@@ -51,6 +51,7 @@ taskController.update = async (req, res, next) => {
     if (invalidKeys.length > 0) {
       return res.status(400).json({ message: `Extra or Invalid Keys Passed: ${invalidKeys}` });
     }
+    session.checkSession (req, res, async() => {
 
     const updatedTask = await Task.findOneAndUpdate(
       { _id: taskId, user: req.session.userId },
@@ -67,7 +68,7 @@ taskController.update = async (req, res, next) => {
       message: "Task updated",
       task: updatedTask,
     });
-  } catch (err) {
+  })} catch (err) {
     next(err);
   }
 };
@@ -76,43 +77,45 @@ taskController.update = async (req, res, next) => {
 taskController.delete = async (req, res) => {
   const taskId = req.params.taskId;
   console.log("req.session.userId ", req.session.userId);
-  const taskObjectId = mongoose.Types.ObjectId(taskId);
-  // Find the task by ID and user ID
-  const task = await Task.findOne({
-    _id: taskObjectId,
-    user: req.session.userId,
-  });
-  console.log("task id..", taskObjectId);
-  if (!task) {
-    return res.status(404).json({
-      success: false,
-      message: "Task not found",
+    const taskObjectId = mongoose.Types.ObjectId(taskId);
+    // Find the task by ID and user ID
+    const task = await Task.findOne({
+      _id: taskObjectId,
+      user: req.session.userId,
     });
-  }
-
-  try {
-    await task.remove();
-
-    return res.json({
-      success: true,
-      message: "Task deleted",
-      task: {
-        _id: task._id,
-        date: task.date,
-        task: task.task,
-        status: task.status,
-        user: task.user,
-      },
-    });
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({
-      success: false,
-      message: "Server error",
-    });
-  }
-};
-
+    console.log("task id..", taskObjectId);
+    if (!task) {
+      return res.status(404).json({
+        success: false,
+        message: "Task not found",
+      });
+    }
+  
+    try {
+      // Check if the session is valid and the user is logged in
+  session.checkSession(req, res, async () => {
+      await task.remove();
+  
+      return res.json({
+        success: true,
+        message: "Task deleted",
+        task: {
+          _id: task._id,
+          date: task.date,
+          task: task.task,
+          status: task.status,
+          user: task.user,
+        },
+      });
+    })} catch (err) {
+      console.error(err);
+      return res.status(500).json({
+        success: false,
+        message: "Server error",
+      });
+    }
+  };
+  
 taskController.getAll = async (req, res, next) => {
   const { page = 1, limit = 10 } = req.query;
   if (!req.session || !req.session.userId) {
@@ -121,24 +124,38 @@ taskController.getAll = async (req, res, next) => {
       message: "Unauthorized",
     });
   }
+  
 
-  try {
-    const tasks = await Task.find({ user: req.session.userId })
-      .skip((page - 1) * limit)
-      .limit(limit)
-      .sort({ date: -1 });
-    res.json({
-      success: true,
+    try {
+        // Check if the session is valid and the user is logged in
+  session.checkSession(req, res, async () => {
+      const tasks = await Task.find({ user: req.session.userId })
+        .skip((page - 1) * limit)
+        .limit(limit)
+        .sort({ date: -1 });
+      res.json({
+        success: true,
       tasks,
-    });
-  } catch (err) {
-    next(err);
-  }
+      });
+    })} catch (err) {
+      next(err);
+    }
+  
 };
 
 taskController.sort = async (req, res, next) => {
   const { taskIds, page = 1, pageSize = 10 } = req.body;
   try {
+    // Check if  the user is logged in
+    if (!req.session || !req.session.userId) {
+      return res.status(401).json({
+        success: false,
+        message: "Unauthorized",
+      });
+    }
+           // Check if the session is valid and the user is logged in
+  session.checkSession(req, res, async () => {
+
     const tasks = await Task.find({
       _id: { $in: taskIds },
       user: req.session.userId,
@@ -158,7 +175,7 @@ taskController.sort = async (req, res, next) => {
       success: true,
       tasks: sortedTasks,
     });
-  } catch (err) {
+  })} catch (err) {
     next(err);
   }
 };

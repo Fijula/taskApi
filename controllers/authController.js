@@ -31,9 +31,11 @@ authController.register = async (req, res) => {
       return res.status(409).json({ message: 'User Already Exists' });
     }
 
-    res.status(500).json({ message: 'Server error' });
+    res.status(400).json({ message: 'Registration error' });
   }
 };
+
+
 
 authController.login = async (req, res, next) => {
   const { email, password } = req.body;
