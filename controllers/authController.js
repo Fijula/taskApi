@@ -4,8 +4,16 @@ const authController = {};
 const nodemailer = require("nodemailer");
 const crypto = require('crypto');
 
-authController.register  = async (req, res) => {
-  const { email, password } = req.body;
+authController.register = async (req, res) => {
+  const { email, password, ...extraKeys } = req.body;
+
+  // Check for extra or invalid keys in request body
+  const validKeys = ["email", "password"];
+  const invalidKeys = Object.keys(extraKeys).filter((key) => !validKeys.includes(key));
+  if (invalidKeys.length > 0) {
+    return res.status(400).json({ message: `Extra or Invalid Keys Passed: ${invalidKeys}` });
+  }
+
   // create a salt and hash password and create user with the hashed password
   const salt = crypto.randomBytes(16).toString('hex');
   const hashedPassword = crypto.pbkdf2Sync(password, salt, 1000, 64, 'sha512').toString('hex');
@@ -17,6 +25,12 @@ authController.register  = async (req, res) => {
     res.json({ message: 'User registered successfully' });
   } catch (error) {
     console.error('Registration error', error);
+
+    // Check if error is due to duplicate user
+    if (error.code === 11000) {
+      return res.status(409).json({ message: 'User Already Exists' });
+    }
+
     res.status(500).json({ message: 'Server error' });
   }
 };

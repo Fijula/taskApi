@@ -4,9 +4,16 @@ const taskController = {};
 const mongoose = require("mongoose");
 
 taskController.create = async (req, res, next) => {
-  const { date, task, status } = req.body;
+  const { date, task, status, ...extraKeys } = req.body;
 
   try {
+    // Check for extra or invalid keys in request body
+    const validKeys = ["date", "task", "status"];
+    const invalidKeys = Object.keys(extraKeys).filter((key) => !validKeys.includes(key));
+    if (invalidKeys.length > 0) {
+      return res.status(400).json({ message: `Extra or Invalid Keys Passed: ${invalidKeys}` });
+    }
+
     // Check if the session is valid and the user is logged in
     if (!req.session || !req.session.userId) {
       return res.status(401).json({
@@ -32,11 +39,19 @@ taskController.create = async (req, res, next) => {
   }
 };
 
+
 taskController.update = async (req, res, next) => {
   const { taskId } = req.params;
-  const { date, task, status } = req.body;
+  const { date, task, status, ...extraKeys } = req.body;
 
   try {
+    // Check for extra or invalid keys in request body
+    const validKeys = ["date", "task", "status"];
+    const invalidKeys = Object.keys(extraKeys).filter((key) => !validKeys.includes(key));
+    if (invalidKeys.length > 0) {
+      return res.status(400).json({ message: `Extra or Invalid Keys Passed: ${invalidKeys}` });
+    }
+
     const updatedTask = await Task.findOneAndUpdate(
       { _id: taskId, user: req.session.userId },
       { date, task, status },
@@ -56,6 +71,7 @@ taskController.update = async (req, res, next) => {
     next(err);
   }
 };
+
 
 taskController.delete = async (req, res) => {
   const taskId = req.params.taskId;
